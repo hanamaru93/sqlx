@@ -1,4 +1,4 @@
-[Banner SQLX](./images/banner.png)
+![Banner SQLX](./images/banner.png)
 
 # Projeto SQLX
 
