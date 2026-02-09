@@ -21,7 +21,6 @@
 Comando para criar venv:
 ```
 python3 -m venv venv
-
 ```
 
 - Ative a venv.
@@ -29,7 +28,6 @@ python3 -m venv venv
 Comando para ativar a venv
 ```
 source venv\bin\activate
-
 ```
 
 - Instale as dependências.
@@ -38,7 +36,6 @@ Comando para ativar as dependências:
 
 ```
 pip3 install -r requirements.txt
-
 ```
 
 - Uso do programa
@@ -46,7 +43,6 @@ pip3 install -r requirements.txt
 Comando para uso do programa:
 ```
 python3 sqlx.py --url http://exemplo.com
-
 ```
 
 ---
@@ -62,7 +58,6 @@ python3 sqlx.py --url http://exemplo.com
 Comando para criar venv:
 ```
 python -m venv venv
-
 ```
 
 - Ative a venv.
@@ -70,7 +65,6 @@ python -m venv venv
 Comando para ativar a venv
 ```
 source venv\bin\activate
-
 ```
 
 - Instale as dependências.
@@ -79,7 +73,6 @@ Comando para ativar as dependências:
 
 ```
 pip install -r requirements.txt
-
 ```
 
 - Uso do programa
@@ -87,7 +80,6 @@ pip install -r requirements.txt
 Comando para uso do programa:
 ```
 python sqlx.py --url http://exemplo.com
-
 ```
 
 ---
