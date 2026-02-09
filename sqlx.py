@@ -3,10 +3,12 @@ import argparse
 from urllib.parse import urljoin, urlparse, urlencode
 import subprocess
 from bs4 import BeautifulSoup
+from time import strftime
+
 
 #  -------------------
 # | GLOBAL CONSTANT'S |
-# -------------------
+#  -------------------
 
 SQLI_PAYLOADS = [
     "'",
@@ -44,8 +46,12 @@ XSS_PAYLOADS = [
 TIMEOUT=5
 
 
+#  -------------------
+# | Banner of Program |
+#  -------------------
+
 def banner():
-    print("""
+    banner = """
  ___________________________________________________
 | ================================================= | 
 || ███████╗ ██████╗ ██╗                   ██╗  ██╗ ||
@@ -58,7 +64,14 @@ def banner():
 | ================== by Hanamaru ================== |                                               
 + -------------------____________------------------ +   
 
-    """)
+    """
+
+    return banner
+
+
+#  --------------------
+# | Auxiliar Functions |
+#  --------------------
 
 def is_valid_url(url):
     parsed = urlparse(url)
@@ -66,6 +79,11 @@ def is_valid_url(url):
 
 def is_same_domain(base_url, target_url):
     return urlparse(base_url).netloc == urlparse(target_url).netloc
+
+
+# ----------------
+#| Simple Crawler |
+# ----------------
 
 def crawler(start_url):
     to_visit = [start_url]
@@ -109,6 +127,11 @@ def crawler(start_url):
     
     return urls
 
+
+#  ------------------------------
+# | Extraction of GET Parameters |
+#  ------------------------------
+
 def extract_get_parameters(url):
     parsed = urlparse(url)
     params = {}
@@ -121,7 +144,12 @@ def extract_get_parameters(url):
     
     return params
 
-def scan_sqli(url):
+
+#  ----------------------
+# |SQL Injection Scanner |
+#  ----------------------
+
+def scan_sqli(url, file_name):
     params = extract_get_parameters(url)
 
     #Base request (without payload)
@@ -152,19 +180,35 @@ def scan_sqli(url):
             diff = abs(len(response.text) - base_len)
 
             if diff > 50:
-                print("-" * 60)
-                print("*" * 60)
-                print("[+] FOUND A POSSIBLE SQL INJECTION\n")
-                print("*" * 60)
-                print("-" * 60)
-                print(f"    URL: {test_url}")
-                print(f"    Parameters: {param}")
-                print(f"    Payload: {payload}")
-                print(f"    Response's diference: {diff}")
-                print("-" * 60)
-                print("\n")
+                text = "-" * 60
+                text += "\n"
+                text += "*" * 60
+                text += "\n"
+                text += "[+] FOUND A POSSIBLE SQL INJECTION\n"
+                text += "*" * 60
+                text += "\n"
+                text += "-" * 60
+                text += "\n"
+                text += f"    URL: {test_url}"
+                text += "\n"
+                text += f"    Parameters: {param}"
+                text += "\n"
+                text += f"    Payload: {payload}"
+                text += "\n"
+                text += f"    Response's diference: {diff}"
+                text += "\n"
+                text += "-" * 60
+                text += "\n"
+                print(text)
+                text += "\n"
+                generate_report(file_name, text)
 
-def scan_xss(url):
+
+#  ----------
+# | XSS Scan |
+#  ----------
+
+def scan_xss(url, file_name):
     params = extract_get_parameters(url)
 
     if not params:
@@ -184,21 +228,37 @@ def scan_xss(url):
                 continue
 
             if payload in response.text:
-                print("-" * 60)
-                print("*" * 60)
-                print("[+] FOUND A POSSIBLE REFLECTED XSS\n")
-                print("*" * 60)
-                print("-" * 60)
-                print(f"    URL: {test_url}")
-                print(f"    Parameters: {param}")
-                print(f"    Payload: {payload}")
-                print("-" * 60)
-                print("\n")
+                text = "-" * 60
+                text += "\n"
+                text += "*" * 60
+                text += "\n"
+                text += "[+] FOUND A POSSIBLE REFLECTED XSS\n"
+                text += "\n"
+                text += "*" * 60
+                text += "\n"
+                text += "-" * 60
+                text += "\n"
+                text += f"    URL: {test_url}"
+                text += "\n"
+                text += f"    Parameters: {param}"
+                text += "\n"
+                text += f"    Payload: {payload}"
+                text += "\n"
+                text += "-" * 60
+                text += "\n"
+                print(text)
+                text += "\n"
 
-def run_sqlmap(url):
-    cmd = [
-        "python", 
-        "sqlmap.py", 
+                generate_report(file_name, text)
+
+
+#  -------------
+# | Call SQLMAP |
+#  -------------
+
+def run_sqlmap(url, file_name):
+    cmd = [ 
+        "sqlmap", 
         "-u", 
         url, 
         "--batch",
@@ -207,32 +267,62 @@ def run_sqlmap(url):
         "--random-agent"
     ]
 
-    result = subprocess.Popen(
+    process = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
-        creationflags=subprocess.CREATE_NEW_CONSOLE
+        bufsize=1
     )
 
-    full_output = ""
+    for line in process.stdout:
+        print(line.rstrip())
+        text = line.rstrip()
+        text += "\n"
 
-    for line in iter(result.stdout.readline, ''):
-        print(line, end="")     # mostra no terminal
-        full_output += line     # salva tudo
+        generate_report(file_name, text)
 
-    result.stdout.close()
-    result.wait()
-    
-    for output in full_output:
-        print(output)
+    process.wait()
 
-# =====================
-# Main execution
-# =====================
+
+#  --------------------------
+# | Generator of Report Name |
+#  --------------------------
+
+def generate_report_name():
+    timestamp = strftime("%d%m%Y-%H%M%S")
+    file_name = f"sqlx_report_{timestamp}.txt"
+    return file_name
+
+
+#  ------------------------------
+# | Writer Header of Report File |
+#  ------------------------------
+
+def generate_report_title(file_name):
+    with open(f"./reports/{file_name}", "w", encoding='utf-8') as f:           
+        text = banner()
+        text += "\n"
+        text +=f"Report generated in: {strftime('%d/%m/%Y')}\n\n\n"
+        f.write(text)
+
+
+#  --------------------------------
+# |Write A Output Data's in Report |
+#  --------------------------------
+
+def generate_report(file_name, text):
+    with open(f"./reports/{file_name}", "a", encoding='utf-8') as f:           f.write(text)
+
+
+# *================*
+# | Main execution |
+# *================*
 
 def main():
-    banner()
+    print(banner())
+    report_file_name = generate_report_name()
+    generate_report_title(report_file_name)
     parser = argparse.ArgumentParser(prog="SQLX", description="SQLX - A SQLI and XSS Scaner.")
     parser.add_argument("--url", "-u", help='example: http://testphp.vulnweb.com')
     args = parser.parse_args()
@@ -245,12 +335,18 @@ def main():
     print(f"[*] Starting XSS and SQLI scanners...\n")
 
     for url in urls:
-        scan_xss(url)
-        scan_sqli(url)
-        run_sqlmap(url)
+        scan_xss(url, report_file_name)
+        scan_sqli(url, report_file_name)
+    
+    print("\n\n[*] Starting SQLMap...\n\n")
+
+    for url in urls:
+        print(url)
+        run_sqlmap(url, report_file_name)
         
     
-    print("Scans has been finshed.")
+    print("Scans has been finshed.\n")
+    print(f"A new report has been generate in ./reports/{report_file_name}")
 
 if __name__ == "__main__":
     main()
